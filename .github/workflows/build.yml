@@ -1,11 +1,11 @@
-name: Build Bare-Metal Research
+name: Build Bare-Metal UART
 
 # Gatilhos: Roda em pushes na main ou na branch research
 on:
   push:
-    branches: [ "research" ]
+    branches: [ " main" ]
   pull_request:
-    branches: ["research" ]
+    branches: ["main" ]
 
 jobs:
   build:
