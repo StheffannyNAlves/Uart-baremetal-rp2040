@@ -15,7 +15,7 @@ Os principais eixos de validação desta fase foram:
 - acesso direto a periféricos via MMIO (**UART, GPIO e PADS**)
 - pipeline de build raiz (**linker script + ELF + BIN + UF2**)
 
-> **Nota:** o desenvolvimento ativo do projeto principal — a **Sonda Forense de Extração de Memória via SWD** — encontra-se em repositório próprio: **[inserir link do repositório principal aqui]**.
+> **Nota:** o desenvolvimento ativo do projeto principal, a **Sonda Forense de Extração de Memória via SWD**, encontra-se em repositório próprio: **[swd-forensic-extractor](https://github.com/StheffannyNAlves/swd-forensic-extractor)**.
 
 ---
 
@@ -384,5 +384,3 @@ Este repositório deve ser entendido como:
 - laboratório histórico de validação
 - *baseline* técnico de *bring-up bare-metal*
 - referência de baixo nível para a evolução do Projeto Sonda SWD
-
-O desenvolvimento funcional da sonda forense continua em repositório separado: [swd-forensic-extractor](https://github.com/StheffannyNAlves/swd-forensic-extractor)
