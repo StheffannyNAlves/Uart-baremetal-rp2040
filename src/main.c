@@ -173,16 +173,27 @@ int main(void)
     uart_init();
     uart_puts("UART echo ready\r\n");
 
+    
     while (1) {
-        char c = uart_getc();   // espera bloquear até chegar algo no RX
-        uart_putc(c);           // devolve no TX
+        uart_puts("Sthe\r\n");
 
-        if (c == 'S' || c == 't' || c == 'h' || c == 'e') {
-            GPIO_OUT_XOR = (1u << LED);
-        } else if (c == '\r' || c == '\n') {
-            // ignora
-        } else {
-            GPIO_OUT_CLR = (1u << LED);
+        delay(1000u);
+
+    // Pico lê o que acabou de mandar pro próprio RX
+        while (uartrx_disponivel()) {
+            char c = uart_getc(); // Tira o dado da FIFO
+
+        // Só pisca o LED se a letra recebida for realmente parte
+            if (c == 'S' || c == 't' || c == 'h' || c == 'e') {
+                GPIO_OUT_XOR = (1u << LED); // Deu certo
+        }   else if (c == '\r' || c == '\n') {
+        }   else {
+                GPIO_OUT_CLR = (1u << LED); 
         }
+
+        delay(50000u);
+        }
+
+    delay(1000u);
     }
 }
