@@ -371,10 +371,9 @@ Ao longo desta fase, foram validados com sucesso:
 - a operação prática de comunicação serial *bare-metal*
 - a correção explícita de problemas elétricos na linha RX
 
-Mais do que um experimento isolado, este laboratório serviu como base de decisão arquitetural. Ele demonstrou quais partes do sistema exigem controle absoluto em baixo nível e quais podem ser delegadas a uma camada de suporte sem comprometer os objetivos do projeto.
+Este laboratório serviu como base de decisão arquitetural. Demonstrou quais partes do sistema exigem controle absoluto em baixo nível e quais podem ser delegadas a uma camada de suporte sem comprometer os objetivos do projeto.
 
 **Este repositório não é o produto final.**  
-Ele é o alicerce técnico que tornou o projeto final viável com critérios reais.
 
 ---
 
@@ -386,4 +385,4 @@ Este repositório deve ser entendido como:
 - *baseline* técnico de *bring-up bare-metal*
 - referência de baixo nível para a evolução do Projeto Sonda SWD
 
-O desenvolvimento funcional da sonda forense continua em repositório separado:
+O desenvolvimento funcional da sonda forense continua em repositório separado: [swd-forensic-extractor](https://github.com/StheffannyNAlves/swd-forensic-extractor)
