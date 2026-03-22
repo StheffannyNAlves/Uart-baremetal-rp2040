@@ -1,93 +1,36 @@
-# RP2040 Bare-Metal Bring-Up Lab
+# RP2040 Bare-Metal Hardware Validation Lab
 
-> **Fase 0 do Projeto P1 — validação arquitetural e física em baixo nível**
+![Status](https://img.shields.io/badge/Status-Concluído-brightgreen)
+![Platform](https://img.shields.io/badge/Platform-RP2040-c51a4a?logo=raspberry-pi)
+![Language](https://img.shields.io/badge/Language-C%20%2B%20Assembly-00599C?logo=c)
 
-Este repositório documenta a validação de um ambiente **bare-metal no RP2040**, desenvolvido sem dependência do **Pico SDK**, com controle explícito de boot, memória, clocks e periféricos.
-
-O objetivo desta fase foi comprovar, em bancada, que o microcontrolador podia ser inicializado e controlado de forma **previsível, verificável e independente de bibliotecas de alto nível**, antes da evolução para o projeto principal de extração via **SWD (Serial Wire Debug)**.
-
-## Resumo executivo
-
-Nesta fase foram validados, com implementação própria:
-
-* cadeia de boot **BootROM → boot2 → aplicação**
-* **linker script** com organização explícita de FLASH e RAM
-* distinção prática entre **VMA** e **LMA**
-* **crt0** mínimo em Assembly
-* configuração manual da **clock tree**
-* acesso direto a **UART, GPIO e PADS** via MMIO
-* geração de artefatos **ELF, BIN e UF2**
-* operação da UART com evidência funcional e elétrica
-
-> **Nota:** o projeto principal evoluiu para repositório próprio: **[swd-forensic-extractor](https://github.com/StheffannyNAlves/swd-forensic-extractor)**.
+> Validação arquitetural e física do RP2040 em ambiente bare-metal completo — sem Pico SDK, sem abstração. Base técnica para o [P1 SWD Forensic Extractor](https://github.com/StheffannyNAlves/swd-forensic-extractor).
 
 ---
 
-## Sumário
+## Por que este repositório existe
 
-* [Visão geral](#visão-geral)
-* [Estrutura do projeto](#estrutura-do-projeto)
-* [Objetivo técnico](#objetivo-técnico)
-* [Arquitetura validada](#arquitetura-validada)
-* [Funcionalidades implementadas](#funcionalidades-implementadas)
-* [Como compilar e testar](#como-compilar-e-testar)
-* [Metodologia de validação](#metodologia-de-validação)
-* [Evidências experimentais](#evidências-experimentais)
-* [Limitações identificadas](#limitações-identificadas)
-* [Transição de arquitetura](#transição-de-arquitetura)
-* [Estado do repositório](#estado-do-repositório)
+Antes de construir uma sonda forense que controla hardware externo via protocolo SWD, era necessário responder uma pergunta anterior:
+
+**É possível inicializar e operar o RP2040 de forma previsível e verificável, acessando apenas registradores, sem nenhuma biblioteca intermediária?**
+
+Este repositório documenta a resposta experimental a essa pergunta. O objetivo não foi construir um firmware final nem maximizar produtividade, mas validar cada subsistema do chip de forma isolada, com evidência funcional e elétrica.
+
+Os aprendizados desta fase informaram diretamente as decisões de arquitetura do projeto principal, em especial a separação entre o que é responsabilidade do SDK e o que exige controle bare-metal.
 
 ---
 
-## Visão geral
+## O que foi validado
 
-Este repositório representa a etapa de *bring-up bare-metal* do RP2040 usada como base técnica para o Projeto P1.
-
-O foco não foi construir um firmware final nem maximizar produtividade imediata, mas validar:
-
-* inicialização sem SDK
-* controle explícito da imagem em memória
-* configuração manual de clocks
-* acesso direto a periféricos
-* comportamento lógico e elétrico da UART em testes reais
-
-Em outras palavras: antes de abstrair, foi necessário provar que o hardware obedecia diretamente aos registradores.
-
----
-
-## Estrutura do projeto
-
-| Diretório            | Descrição                                                                             |
-| -------------------- | ------------------------------------------------------------------------------------- |
-| `src/`               | Código-fonte em C e Assembly. Contém `start.s`, `main.c` e `boot2_final.S`.           |
-| `linker/`            | Script de linkedição `memmap.ld`, com mapa de memória, seções e símbolos do runtime.  |
-| `tools/`             | Utilitários auxiliares, incluindo `boot2.bin`, conversão para UF2 e scripts de apoio. |
-| `docs/`              | Evidências experimentais, como capturas de terminal, GIFs e formas de onda.           |
-| `.github/workflows/` | Pipeline de build automatizado com GitHub Actions.                                    |
-
----
-
-## Objetivo técnico
-
-A pergunta central desta fase foi:
-
-**É possível controlar o RP2040 de forma previsível, verificável e independente de bibliotecas de alto nível?**
-
-Para responder isso, o projeto buscou validar:
-
-* comportamento real da cadeia de boot
-* inicialização de um runtime mínimo customizado
-* coerência entre layout lógico e físico da imagem
-* acesso direto aos registradores do chip
-* operação funcional e estabilidade elétrica da UART
-
-### Critérios de validação atingidos
-
-* seção `.boot2` posicionada em `0x10000000`, com **256 bytes**
-* `boot2` injetado via `.incbin`, sem geração dinâmica no build
-* `.text` posicionada em FLASH, `.data` carregada de FLASH e executada em RAM
-* `crt0` com pilha, cópia de `.data`, limpeza de `.bss` e salto para `main`
-* periféricos acessados exclusivamente por **MMIO**
+| Subsistema | Implementação | Evidência |
+| ------------ | -------------- | ----------- |
+| Cadeia de boot | `BootROM → boot2 → Reset_Handler → main()` | Execução confirmada |
+| Linker script | Organização explícita de FLASH e RAM, VMA/LMA | `readelf`, `objdump` |
+| Runtime (`crt0`) | Pilha, cópia de `.data`, limpeza de `.bss` em Assembly | Inspeção de memória |
+| Clock tree | XOSC 12 MHz, seleção manual de `clk_ref` e `clk_sys` | Operação da UART |
+| GPIO via SIO | Registradores atômicos `GPIO_OUT_SET`/`CLR` | Sinal observado |
+| UART bare-metal | `FUNCSEL`, `IBRD`/`FBRD`, FIFOs TX/RX | Terminal + analisador lógico |
+| PADS | Pull-up, Schmitt trigger, correção de linha flutuante | Captura lógica |
 
 ---
 
@@ -95,101 +38,95 @@ Para responder isso, o projeto buscou validar:
 
 ### Fluxo de boot
 
-O fluxo implementado e validado foi:
-
-`BootROM -> boot2 -> Reset Handler -> runtime mínimo -> main()`
+```text
+BootROM (ROM interna)
+  └→ boot2 (256 bytes em 0x10000000 — segundo estágio)
+       └→ Reset_Handler (crt0 em Assembly)
+            ├── configura stack pointer
+            ├── copia .data de FLASH para RAM
+            ├── zera .bss
+            └→ main()
+```
 
 ### Modelo de memória
 
-A imagem foi organizada explicitamente entre FLASH e RAM:
-
-* **FLASH**: armazenamento do firmware
-* **RAM**: dados mutáveis e pilha
-* **`.text`**: executada em FLASH
-* **`.data`**: carregada da FLASH e copiada para RAM
-* **`.bss`**: zerada manualmente no startup
-
-### Mapa lógico resumido
-
 ```text
-0x10000000  .boot2
-0x10000100  .text
-RAM         .data / .bss / stack
+FLASH (0x10000000)
+├── 0x10000000  .boot2       (256 bytes — injetado via .incbin)
+└── 0x10000100  .text        (código — executado em FLASH)
+                .rodata      (constantes)
+                .data (LMA)  (dados mutáveis — armazenados em FLASH)
+
+RAM (0x20000000)
+├── .data (VMA)   (copiado de FLASH pelo crt0)
+├── .bss          (zerado pelo crt0)
+└── stack         (cresce para baixo)
 ```
 
-Essa organização foi usada para validar, na prática, a diferença entre:
+A distinção entre **VMA** (endereço de execução) e **LMA** (endereço de armazenamento na imagem) foi validada inspecionando o ELF gerado com `readelf -S` e confirmando que o `crt0` copiava corretamente o segmento `.data` antes de chamar `main()`.
 
-* **VMA**: endereço de execução
-* **LMA**: endereço de carregamento na imagem
+### Clock tree
 
----
+```text
+XOSC (12 MHz cristal externo)
+  └→ clk_ref  (configurado manualmente via CLKSRC)
+       └→ clk_sys (roteado para os periféricos)
+```
 
-## Funcionalidades implementadas
-
-### 1. Boot e runtime manual
-
-* vetor de interrupções definido manualmente
-* `Reset_Handler` em Assembly
-* configuração da pilha principal
-* cópia de `.data` para RAM
-* limpeza de `.bss`
-* salto controlado para `main`
-
-### 2. Clock tree manual
-
-* habilitação do XOSC externo de 12 MHz
-* espera pela estabilização do oscilador
-* seleção manual de `clk_ref`
-* roteamento explícito de `clk_sys`
-* validação indireta pela operação correta da UART
-
-### 3. GPIO via SIO
-
-* configuração de direção dos pinos
-* escrita por registradores atômicos
-* controle lógico sem camadas intermediárias
-
-### 4. UART bare-metal
-
-* liberação de reset dos blocos UART e IO
-* configuração de `FUNCSEL`
-* definição de baud rate com `IBRD` e `FBRD`
-* formato serial `115200 8N1`
-* TX e RX por acesso direto às FIFOs
-
-### 5. PADS e integridade elétrica
-
-* análise do estado padrão dos PADS
-* configuração explícita do pino RX
-* ativação de *pull-up* interno
-* ativação de *Schmitt trigger*
-* correção da linha RX flutuante em repouso
+A estabilização do XOSC foi aguardada por polling do bit `STABLE` antes de prosseguir, sem isso, a UART operaria com clock incorreto e produziria dados corrompidos.
 
 ---
 
-## Como compilar e testar
+## Estrutura do projeto
+
+```text
+uart-baremetal-rp2040/
+├── src/
+│   ├── start.s          ← Reset_Handler: crt0 mínimo em Assembly
+│   ├── main.c           ← aplicação: clock tree, GPIO, UART
+│   └── boot2_final.S    ← segundo estágio de boot (injetado via .incbin)
+├── linker/
+│   └── memmap.ld        ← script de link: seções, símbolos, VMA/LMA
+├── tools/
+│   ├── boot2.bin        ← binário do boot2 pré-compilado
+│   └── uf2conv.py       ← conversão BIN → UF2
+├── docs/
+│   ├── uart-echo.gif    ← evidência 1: comunicação serial reativa
+│   ├── uart-waveform.png ← evidência 2: captura lógica TX/RX
+│   └── testecomloopback.png ← evidência 3: loopback físico
+└── .github/workflows/   ← pipeline de build automático
+```
+
+---
+
+## Como compilar
 
 ### Requisitos
 
-* `arm-none-eabi-gcc`
-* `cmake`
-* `ninja`
-* `python3`
+| Ferramenta | Versão testada |
+| --- | --- |
+| `arm-none-eabi-gcc` | 13.2 |
+| `cmake` | ≥ 3.13 |
+| `ninja` | qualquer |
+| `python3` | ≥ 3.8 |
 
 ### Build
 
 ```bash
+git clone https://github.com/StheffannyNAlves/rp2040-baremetal.git
+cd rp2040-baremetal
+
 cmake -S . -B build -G Ninja
 cmake --build build --verbose
 ```
 
-### Artefatos esperados
+### Artefatos gerados
 
 ```text
 build/
- ├── firmware.elf
- ├── firmware.bin
- └── firmware.uf2
+├── firmware.elf   ← inspecionar com readelf / objdump
+├── firmware.bin   ← imagem binária bruta
+└── firmware.uf2   ← para arrastar para o Pico em modo BOOTSEL
 ```
 
 ### Conversão para UF2
@@ -201,147 +138,137 @@ python3 tools/uf2conv.py build/firmware.bin -o build/firmware.uf2
 ### Teste serial
 
 ```bash
+# Linux
 picocom -b 115200 /dev/ttyUSB0
+
+# Verificar porta disponível
+ls /dev/ttyUSB* /dev/ttyACM*
 ```
 
 ---
 
 ## Metodologia de validação
 
-A validação foi conduzida de forma incremental, isolando subsistemas sempre que necessário.
+A validação foi conduzida de forma incremental, isolando um subsistema por vez antes de integrá-lo ao restante.
 
 ### Estratégia
 
-1. inspeção estática da imagem com ferramentas binárias
-2. validação do layout de memória
-3. teste de transmissão UART
-4. teste de recepção UART
-5. observação da camada física com terminal serial e analisador lógico
-
-### Ferramentas utilizadas
-
-* `readelf`
-* `objdump`
-* `picocom`
-* ponte USB-Serial externa
-* analisador lógico Hantek 6022BL
-
-> Durante os testes, partes do firmware foram temporariamente isoladas para validar individualmente cada subsistema antes da integração.
+```text
+1. Inspeção estática do ELF (readelf, objdump)
+     └→ confirmar seções, endereços, símbolos
+2. Validação do layout de memória
+     └→ VMA/LMA coerentes com o linker script
+3. Teste de transmissão UART (TX → terminal)
+     └→ confirmar baudrate e ausência de corrupção
+4. Teste de recepção UART (RX sem loopback)
+     └→ confirmar linha estável em repouso após ajuste de PADS
+5. Teste com loopback físico (TX → RX)
+     └→ isolar FIFOs e confirmar integridade temporal
+6. Captura com analisador lógico
+     └→ validar start bit, dados, stop bit e timing
+```
 
 ---
 
 ## Evidências experimentais
 
-### Evidência 1 — comunicação serial reativa
+### Evidência 1 — Comunicação serial reativa
 
-O RP2040 executando firmware *bare-metal* em modo de eco foi conectado a um terminal serial externo.
+O RP2040 executando firmware bare-metal em modo eco, conectado a um terminal externo via `picocom`. A string `UART` aparece no terminal, confirmando que o chip inicializou corretamente, configurou a UART e está transmitindo via acesso direto às FIFOs.
 
-Os testes mostraram:
-
-* envio correto de dados ao terminal
-* ausência de corrupção serial em `115200 8N1`
-* recepção e eco por leitura direta da FIFO de RX
+**Configuração:** `115200 8N1`, sem controle de fluxo, sem loopback físico.
 
 ![Validação da comunicação serial reativa](./docs/uart-echo.gif)
 
 ---
 
-### Evidência 2 — integridade de sinal em nível de fio
+### Evidência 2 — Integridade de sinal em nível de fio
 
-Foi realizada captura direta das linhas TX e RX com analisador lógico, sem *loopback* físico e sem *drive* externo adicional na linha RX.
+Captura direta de TX e RX com analisador lógico Hantek 6022BL (DSView), sem loopback físico e sem driver externo na linha RX. O decoder UART do DSView decodifica os bytes transmitidos e confirma:
 
-A captura mostrou:
+- presença de start bit, 8 bits de dados e stop bit coerentes com `8N1`
+- TX operando no baudrate esperado
+- RX estabilizada em nível alto após configuração de pull-up e Schmitt trigger nos PADS
 
-* presença de *start bit*, dados e *stop bit* coerentes
-* TX operando conforme o comportamento esperado da UART
-* RX estabilizada em nível alto após ajuste de PADS
+> **Nota:** a linha RX flutuava antes do ajuste dos PADS, causando recepção de lixo. A correção exigiu habilitar pull-up interno e Schmitt trigger via registradores `PADS_BANK0` — acesso direto, sem SDK.
 
 ![Captura lógica das linhas TX e RX](./docs/uart-waveform.png)
 
 ---
 
-### Evidência 3 — validação de FIFOs por loopback físico
+### Evidência 3 — Validação de FIFOs por loopback físico
 
-Para isolar variáveis externas, a linha TX foi conectada diretamente à linha RX. Nesse arranjo, o RP2040 transmitia uma sequência conhecida e validava a recepção local byte a byte.
+TX conectado diretamente a RX. O RP2040 transmitia a string `"shahe\r\n"` e validava a recepção local byte a byte. A captura confirma:
 
-Esse teste confirmou:
+- espelhamento consistente entre TX e RX com delay mínimo
+- operação simultânea das FIFOs sem perda
+- integridade temporal compatível com `115200 8N1`
+- os bytes decodificados pelo DSView em TX e RX são idênticos e correspondem à string transmitida
 
-* espelhamento consistente entre TX e RX
-* operação simultânea das FIFOs sem perda aparente
-* integridade temporal compatível com `115200 8N1`
-* recepção válida do sinal gerado pelo próprio pino de saída
-
-![UART com loopback](./docs/testecomloopback.png)
+![UART com loopback físico](./docs/testecomloopback.png)
 
 ---
 
 ## Limitações identificadas
 
-Embora esta fase tenha validado com sucesso o domínio do RP2040 em ambiente *bare-metal*, ela também mostrou limites da UART como canal principal de exfiltração.
+### Gargalo de throughput da UART
 
-### Gargalo serial
+O protocolo `8N1` consome 10 bits físicos por byte útil. A `115200 bps`:
 
-* protocolo `8N1` consome 10 bits físicos por byte útil
-* a `115200 bps`, o throughput efetivo fica em torno de `11.520 bytes/s`
-* um dump completo de `2 MiB` leva vários minutos
+```text
+throughput efetivo = 115200 / 10 = 11.520 bytes/s = ~11,25 KB/s
+tempo para 2 MB   = 2.097.152 / 11.520 ≈ 182 segundos (~3 minutos)
+```
 
-Além disso, UART:
+Isso é **3× acima da meta de 60 segundos** para o dump forense. Além disso:
 
-* é mais sensível a ruído
-* escala mal para volumes maiores de dados
-* não é a melhor escolha como canal principal para o objetivo forense final
+- UART é mais sensível a ruído em cabos longos
+- não há controle de fluxo nativo adequado para volumes grandes
+- latência de handshake manual por software aumenta o overhead
 
 ### Conclusão
 
-UART foi adequada como ferramenta de validação e diagnóstico, mas inadequada como canal principal de transporte da arquitetura final.
+A UART foi adequada como canal de diagnóstico e validação. Para o objetivo forense final — 2 MB em menos de 60 segundos — é inadequada como canal principal de transporte.
 
 ---
 
-## Transição de arquitetura
+## O que esta fase ensinou e como isso mudou o projeto
 
-Com base nesta fase, o projeto principal evoluiu para uma arquitetura híbrida.
+Cada decisão da arquitetura híbrida do projeto principal tem origem direta nesta fase.
 
-### Transporte externo
+**Registradores atômicos do SIO** — validados aqui com GPIO e UART. A mesma lógica se aplica ao SWD no projeto principal: `GPIO_OUT_SET`/`CLR` em vez de `gpio_put()` porque leitura-modificação-escrita é insegura em contexto com interrupções.
 
-Uso do **Pico SDK** apenas para a camada USB, com **TinyUSB / USB CDC**, visando:
+**Separação SDK/bare-metal** — o SDK foi deliberadamente excluído aqui para entender o que ele faz por baixo. Com esse entendimento, a decisão no projeto principal ficou clara: SDK para transporte USB (sem requisito de timing preciso), bare-metal para os pinos SWD (timing crítico em microssegundos).
 
-* maior taxa de transferência
-* comunicação mais estável com o host
-* integração mais simples via USB
-
-### Núcleo de extração
-
-O controle das linhas **SWD** permaneceu *bare-metal*, preservando:
-
-* previsibilidade temporal
-* manipulação direta de GPIO e PADS
-* controle fino da rotina de leitura
-
-### Síntese
-
-* **USB para transportar**
-* **bare-metal para controlar o alvo**
+**UART como diagnóstico, USB como transporte** — o gargalo calculado acima é a justificativa quantitativa para usar TinyUSB CDC no projeto principal. Não foi uma escolha arbitrária.
 
 ---
 
-## Estado do repositório
+## Relação com o projeto principal
 
-Este repositório deve ser entendido como:
+Este repositório é a **Fase 0** de uma sequência de dois projetos:
 
-* laboratório de validação técnica
-* baseline de *bring-up bare-metal* no RP2040
-* referência para a evolução do Projeto P1
+```text
+uart-baremetal-rp2040 (este repositório)
+  └→ Pergunta: é possível controlar o RP2040 sem SDK?
+  └→ Resposta: sim — com evidência funcional e elétrica
 
-### Status
+swd-forensic-extractor (projeto principal)
+  └→ Pergunta: é possível extrair firmware de outro RP2040 via SWD,
+               com integridade forense verificável?
+  └→ Construído sobre o que foi aprendido aqui
+```
 
-* **escopo da Fase 0 concluído**
-* **manutenção mínima**
-* **sem objetivo de evolução para produto final**
-
-### Fora de escopo
-
-* transporte USB final
-* implementação completa da sonda SWD
-* pipeline de extração forense definitiva
+→ **[Ver projeto principal: P1 SWD Forensic Extractor](https://github.com/StheffannyNAlves/swd-forensic-extractor)**
 
 ---
+
+## Referências
+
+- [RP2040 Datasheet](https://datasheets.raspberrypi.com/rp2040/rp2040-datasheet.pdf) — §2.3.1 (SIO), §2.15 (Clocks), §4.2 (UART), §4.7 (Watchdog)
+- [ARMv6-M Architecture Reference Manual](https://developer.arm.com/documentation/ddi0419/latest) — vetor de reset, modelo de memória
+- [GNU LD Manual](https://sourceware.org/binutils/docs/ld/) — linker scripts, VMA/LMA, seções
+
+---
+
+*Desenvolvido por [Stheffanny N. Alves](https://github.com/StheffannyNAlves)*
