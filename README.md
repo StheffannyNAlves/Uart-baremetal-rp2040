@@ -198,7 +198,7 @@ Captura direta de TX e RX com analisador lógico Hantek 6022BL (DSView), sem loo
 
 ### Evidência 3 — Validação de FIFOs por loopback físico
 
-TX conectado diretamente a RX. O RP2040 transmitia a string `"shahe\r\n"` e validava a recepção local byte a byte. A captura confirma:
+TX conectado diretamente a RX. O RP2040 transmitia a string `"Sthe\r\n"` e validava a recepção local byte a byte. A captura confirma:
 
 - espelhamento consistente entre TX e RX com delay mínimo
 - operação simultânea das FIFOs sem perda
