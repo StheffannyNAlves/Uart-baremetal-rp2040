@@ -113,8 +113,8 @@ uart-baremetal-rp2040/
 ### Build
 
 ```bash
-git clone https://github.com/StheffannyNAlves/rp2040-baremetal.git
-cd rp2040-baremetal
+git clone https://github.com/StheffannyNAlves/uart-baremetal-rp2040.git
+cd uart-baremetal-rp2040
 
 cmake -S . -B build -G Ninja
 cmake --build build --verbose
@@ -132,7 +132,7 @@ build/
 ### Conversão para UF2
 
 ```bash
-python3 tools/uf2conv.py build/firmware.bin -o build/firmware.uf2
+python3 tools/uf2conv.py -c build/firmware.bin -b 0x10000000 -f 0xe48bff56 -o build/firmware.uf2
 ```
 
 ### Teste serial
@@ -190,7 +190,7 @@ Captura direta de TX e RX com analisador lógico Hantek 6022BL (DSView), sem loo
 - TX operando no baudrate esperado
 - RX estabilizada em nível alto após configuração de pull-up e Schmitt trigger nos PADS
 
-> **Nota:** a linha RX flutuava antes do ajuste dos PADS, causando recepção de lixo. A correção exigiu habilitar pull-up interno e Schmitt trigger via registradores `PADS_BANK0` — acesso direto, sem SDK.
+> **Nota:** a linha RX flutuava antes do ajuste dos PADS, causando recepção de lixo. A correção exigiu habilitar pull-up interno e Schmitt trigger via registradores `PADS_BANK0`, acesso direto, sem SDK.
 
 ![Captura lógica das linhas TX e RX](./docs/uart-waveform.png)
 
@@ -228,7 +228,7 @@ Isso é **3× acima da meta de 60 segundos** para o dump forense. Além disso:
 
 ### Conclusão
 
-A UART foi adequada como canal de diagnóstico e validação. Para o objetivo forense final — 2 MB em menos de 60 segundos — é inadequada como canal principal de transporte.
+A UART foi adequada como canal de diagnóstico e validação. Para o objetivo forense final, 2 MB em menos de 60 segundos, é inadequada como canal principal de transporte.
 
 ---
 
@@ -236,11 +236,11 @@ A UART foi adequada como canal de diagnóstico e validação. Para o objetivo fo
 
 Cada decisão da arquitetura híbrida do projeto principal tem origem direta nesta fase.
 
-**Registradores atômicos do SIO** — validados aqui com GPIO e UART. A mesma lógica se aplica ao SWD no projeto principal: `GPIO_OUT_SET`/`CLR` em vez de `gpio_put()` porque leitura-modificação-escrita é insegura em contexto com interrupções.
+**Registradores atômicos do SIO**: validados aqui com GPIO e UART. A mesma lógica se aplica ao SWD no projeto principal: `GPIO_OUT_SET`/`CLR` em vez de `gpio_put()` porque leitura-modificação-escrita é insegura em contexto com interrupções.
 
-**Separação SDK/bare-metal** — o SDK foi deliberadamente excluído aqui para entender o que ele faz por baixo. Com esse entendimento, a decisão no projeto principal ficou clara: SDK para transporte USB (sem requisito de timing preciso), bare-metal para os pinos SWD (timing crítico em microssegundos).
+**Separação SDK/bare-metal**: o SDK foi deliberadamente excluído aqui para entender o que ele faz por baixo. Com esse entendimento, a decisão no projeto principal ficou clara: SDK para transporte USB (sem requisito de timing preciso), bare-metal para os pinos SWD (timing crítico em microssegundos).
 
-**UART como diagnóstico, USB como transporte** — o gargalo calculado acima é a justificativa quantitativa para usar TinyUSB CDC no projeto principal. Não foi uma escolha arbitrária.
+**UART como diagnóstico, USB como transporte**: o gargalo calculado acima é a justificativa quantitativa para usar TinyUSB CDC no projeto principal. Não foi uma escolha arbitrária.
 
 ---
 
@@ -251,7 +251,7 @@ Este repositório é a **Fase 0** de uma sequência de dois projetos:
 ```text
 uart-baremetal-rp2040 (este repositório)
   └→ Pergunta: é possível controlar o RP2040 sem SDK?
-  └→ Resposta: sim — com evidência funcional e elétrica
+  └→ Resposta: sim, com evidência funcional e elétrica
 
 swd-forensic-extractor (projeto principal)
   └→ Pergunta: é possível extrair firmware de outro RP2040 via SWD,
