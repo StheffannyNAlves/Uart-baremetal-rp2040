@@ -4,19 +4,19 @@
 ![Platform](https://img.shields.io/badge/Platform-RP2040-c51a4a?logo=raspberry-pi)
 ![Language](https://img.shields.io/badge/Language-C%20%2B%20Assembly-00599C?logo=c)
 
-> Validação arquitetural e física do RP2040 em ambiente bare-metal completo — sem Pico SDK, sem abstração. Base técnica para o [P1 SWD Forensic Extractor](https://github.com/StheffannyNAlves/swd-forensic-extractor).
+> Baseline técnica em bare-metal no RP2040, desenvolvida sem Pico SDK, como etapa preparatória para uma sonda de aquisição via SWD baseada em RP2040. [P1 SWD Forensic Extractor](https://github.com/StheffannyNAlves/swd-forensic-extractor).
 
 ---
 
 ## Por que este repositório existe
 
-Antes de construir uma sonda forense que controla hardware externo via protocolo SWD, era necessário responder uma pergunta anterior:
+Este repositório documenta a Fase 0 de um projeto maior: o desenvolvimento de uma ferramenta baseada em Raspberry Pi Pico para se comunicar com outro RP2040 via SWD, controlar sua execução e realizar a aquisição de firmware de forma controlada e documentada.
 
-**É possível inicializar e operar o RP2040 de forma previsível e verificável, acessando apenas registradores, sem nenhuma biblioteca intermediária?**
+Antes de implementar essa sonda, era necessário validar a base técnica que sustenta esse objetivo. Isso significava operar o RP2040 em bare-metal, sem bibliotecas intermediárias, com controle explícito sobre boot, memória, runtime, clocks, GPIO e UART.
 
-Este repositório documenta a resposta experimental a essa pergunta. O objetivo não foi construir um firmware final nem maximizar produtividade, mas validar cada subsistema do chip de forma isolada, com evidência funcional e elétrica.
+O foco desta fase não foi construir a ferramenta final, mas comprovar, com evidência funcional e elétrica, que os subsistemas fundamentais do microcontrolador podiam ser inicializados, configurados e observados diretamente por registradores.
 
-Os aprendizados desta fase informaram diretamente as decisões de arquitetura do projeto principal, em especial a separação entre o que é responsabilidade do SDK e o que exige controle bare-metal.
+Na prática, este repositório registra a consolidação dessa baseline: uma etapa de domínio arquitetural e físico do RP2040 que serve de fundação para a próxima fase do projeto.
 
 ---
 
