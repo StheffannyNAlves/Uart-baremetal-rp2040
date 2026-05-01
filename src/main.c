@@ -35,7 +35,7 @@
 #define RST_PADS_BANK0   (1u << 8)
 
 #define GPIO0_CTRL       *(volatile uint32_t *)(IO_BANK0_BASE + 0x004) // TX
-#define GPIO13_CTRL      *(volatile uint32_t *)(IO_BANK0_BASE + 0x06C) // RX
+#define GPIO01_CTRL      *(volatile uint32_t *)(IO_BANK0_BASE + 0x00C) // RX
 #define GPIO25_CTRL      *(volatile uint32_t *)(IO_BANK0_BASE + 0x0CC) // LED
 
 #define FUNC_UART        2u
@@ -58,7 +58,7 @@
 
 /* PADS_BANK0 */
 #define PADS_GPIO0       *(volatile uint32_t *)(PADS_BANK0_BASE + 0x04)
-#define PADS_GPIO13      *(volatile uint32_t *)(PADS_BANK0_BASE + 0x38)
+#define PADS_GPIO01      *(volatile uint32_t *)(PADS_BANK0_BASE + 0x08)
 
 #define PAD_OD           (1u << 7)
 #define PAD_IE           (1u << 6)
@@ -107,8 +107,8 @@ static void pads_uart_init(void)
      * - schmitt ligado
      * - pull-down desligado
      */
-    PADS_GPIO13 |= (PAD_IE | PAD_PUE | PAD_SCHMITT);
-    PADS_GPIO13 &= ~PAD_PDE;
+    PADS_GPIO01 &= ~PAD_PDE;
+    PADS_GPIO01 |= (PAD_IE | PAD_PUE | PAD_SCHMITT);
 }
 
 void uart_init(void)
@@ -117,7 +117,7 @@ void uart_init(void)
     while (!(RESETS_RESET_DONE & RST_UART0));
 
     GPIO0_CTRL = FUNC_UART;
-    GPIO13_CTRL = FUNC_UART;
+    GPIO01_CTRL = FUNC_UART;
 
     pads_uart_init();
 

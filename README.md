@@ -250,12 +250,14 @@ Este repositório é a **Fase 0** de uma sequência de dois projetos:
 
 ```text
 uart-baremetal-rp2040 (este repositório)
-  └→ Pergunta: é possível controlar o RP2040 sem SDK?
-  └→ Resposta: sim, com evidência funcional e elétrica
+ ↳ Objetivo: Mapear o hardware do RP2040 e validar na prática o domínio sobre a manipulação direta de registradores (SIO) sem abstrações.
+ ↳ Resultado: Base técnica consolidada (operações atômicas e timing) para viabilizar o projeto forense.
 
-swd-forensic-extractor (projeto principal)
-  └→ Pergunta: é possível extrair firmware de outro RP2040 via SWD,
-               com integridade forense verificável?
+swd-forensic-extractor (Projeto Dolos - Sonda Forense Bare-Metal)
+ ↳ Objetivo: Aquisição de firmware via SWD com rastreabilidade de dados, rejeitando o uso de bibliotecas genéricas de debug para manter controle absoluto sobre a extração.
+ ↳ Arquitetura Crítica: Implementação manual da camada física SWD (bit-banging), política de erros centralizada em LUT estática (O(1), sem heap) e FSM espelhada no host.
+ ↳ Rastreabilidade e Validação: Operação restrita a modo Safe-Read. Validação criptográfica com hashes SHA256 incrementais por bloco (64 KB) e geração de log estruturado para replay de sessão e cadeia de custódia.
+ ↳ Resultado: Uma ferramenta de extração auditável e determinística, construída sobre o domínio de timing e hardware validado na Fase 0.
   └→ Construído sobre o que foi aprendido aqui
 ```
 
