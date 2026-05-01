@@ -261,7 +261,7 @@ swd-forensic-extractor (Projeto Dolos - Sonda Forense Bare-Metal)
   └→ Construído sobre o que foi aprendido aqui
 ```
 
-→ **[Ver projeto principal: P1 SWD Forensic Extractor](https://github.com/StheffannyNAlves/swd-forensic-extractor)**
+→ **[Ver projeto principal: Projeto Dolos](https://github.com/StheffannyNAlves/swd-forensic-extractor)**
 
 ---
 
