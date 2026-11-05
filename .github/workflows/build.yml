@@ -3,9 +3,12 @@ name: Build Bare-Metal UART
 # Gatilhos: Roda em pushes na main ou na branch research
 on:
   push:
-    branches: [ " main" ]
+    branches: ["main"]
   pull_request:
     branches: ["main" ]
+
+permissions:
+  contents: read
 
 jobs:
   build:
@@ -14,7 +17,7 @@ jobs:
     steps:
     # 1. Baixa código
     - name: Checkout Repo
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Install Arm GNU Toolchain
       run: |
